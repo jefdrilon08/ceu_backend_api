@@ -44,13 +44,13 @@ module Api
                 loan.date_approved,
 
               co_maker_member_id:
-                loan.co_maker_member_id,
+                loan.data&.dig("co_maker_one", "id"),
 
               co_maker_first_name:
-                loan.co_maker_first_name,
+                loan.data&.dig("co_maker_one", "first_name"),
 
               co_maker_last_name:
-                loan.co_maker_last_name,
+                loan.data&.dig("co_maker_one", "last_name"),
 
               data:
                 loan.data,
@@ -92,15 +92,6 @@ module Api
 
             reference_number:
               SecureRandom.hex(3).upcase,
-
-            co_maker_member_id:
-              params[:co_maker_member_id],
-
-            co_maker_first_name:
-              params[:co_maker_first_name],
-
-            co_maker_last_name:
-              params[:co_maker_last_name],
 
             # =================================
             # JSON DATA FIELD
@@ -222,6 +213,21 @@ module Api
               },
 
               # -----------------------------
+              # CO-MAKERS (stored in JSON; no dedicated columns)
+              # -----------------------------
+              co_maker_one: {
+                id:         params[:co_maker_member_id],
+                first_name: params[:co_maker_first_name],
+                last_name:  params[:co_maker_last_name]
+              },
+
+              co_maker_two:
+                [
+                  params.dig(:so_file, :co_maker_sa_bahay_first_name),
+                  params.dig(:so_file, :co_maker_sa_bahay_last_name)
+                ].compact_blank.join(" "),
+
+              # -----------------------------
               # OTHER DATA
               # -----------------------------
               mobile_number:
@@ -311,8 +317,8 @@ def last
   co_maker_two       = loan_data["co_maker_two"].to_s.strip
   co_maker_two_parts = co_maker_two.split(" ")
   co_maker_two_first = co_maker_two_parts[0] || ""
-  co_maker_two_last  = co_maker_two_parts[1..].join(" ")
-
+  #co_maker_two_last  = co_maker_two_parts[1..].join(" ")
+  co_maker_two_last  = co_maker_two_parts.drop(1).join(" ")
   # ── Co-maker active check ──────────────────────────────────────────────────
   #co_maker_member = Member.find_by(id: co_maker_one["id"])
   co_maker_member = ::Member.find_by(id: co_maker_one["id"])
